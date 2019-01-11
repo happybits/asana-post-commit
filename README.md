@@ -20,29 +20,7 @@ Then run the following commands:
 Then chmod your hooks folder and post-commit hook file:
 `% chmod 755 .git/hooks && chmod ogu+rx .git/hooks/post-commit`
 
-Now in your commits, you can write messages like "Tweaked the widget; fixed #1, #2, and #3; references #4 and #5; oh yeah, and closes #6" and the right thing will happen.
+Now in your commits, you can write messages like "Tweaked the widget; fixed #1, #2, and #3; references #4 and #5; oh yeah, and closes #6" and the right thing will happen. Alternatively you can
+use the full Asana ticket URL (e.g. https://app.asana.com/0/123456789012345/098765432109876)
 
-Alternatively, if the branch name ends with '#' followed by the task id then a comment will also be added to the task. Example for branch name with task id 1: `myBranch#1`
-
-LICENSE
--------
-
-Copyright (C) 2013 by Spaceman Labs
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+As another alternative, if the branch name ends with '#' followed by the task id then a comment will also be added to the task. Example for branch name with task id 1: `myBranch#1`
