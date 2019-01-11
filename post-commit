@@ -104,7 +104,6 @@ fi
 if [ "$found_task_id" = false ]; then
     for element in "${words[@]}"
     do
-        echo "trying url and das element is $element"
         # if we have a task id, save it to the appropriate array
         if [[ $element =~ $taskurl_pattern ]]; then
             referenced=("${referenced[@]}" "${BASH_REMATCH[1]}")
