@@ -2,7 +2,7 @@
 
 # modified from https://github.com/Spaceman-Labs/asana-post-commit
 #
-# Added Bitbucket and GitHub links to Asana commits
+# Link Bitbucket and GitHub commits to Asana tasks
 # modified by Zac Wolfe <zac@happybits.co>
 
 # -----------------------
