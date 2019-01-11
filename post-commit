@@ -1,0 +1,139 @@
+#!/bin/bash
+
+# modified from https://github.com/Spaceman-Labs/asana-post-commit
+#
+# Added Bitbucket and GitHub links to Asana commits
+# modified by Zac Wolfe <zac@happybits.co>
+
+# -----------------------
+# necessary configuration:
+# git config --global user.asana-token "MY_ASANA_PERSONAL_ACCESS_TOKEN" (http://app.asana.com/-/account_api)
+# git config --global user.display-branch-name-in-comment "true/false" # (This is config is optional, defaults to true)
+# -----------------------
+
+access_token=$(git config user.asana-token)
+display_branch_name=$(git config user.display-branch-name-in-comment)
+
+# defaults
+if [ $access_token == "" ]; then
+    echo "Please Set Your Asana Token git config --global user.asana-token \"MY_ASANA_PERSONAL_ACCESS_TOKEN\" (http://app.asana.com/-/account_api)" >&2
+    exit 1
+fi
+if [ "$display_branch_name" == "" ]; then
+	display_branch_name=true;
+fi
+
+# Find repository host
+for repository in $(git remote -v | awk '{ print $2 }'); do
+    scheme="$(echo $repository | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+    url="$(echo ${repository/$scheme/})"
+    user="$(echo $url | grep @ | cut -d@ -f1)"
+    if [[ $scheme == "" ]]; then
+        host="$(echo ${url/$user@/} | cut -d: -f1)"
+        path="$(echo $url | grep : | cut -d: -f2-)"
+    else
+        host="$(echo ${url/$user@/} | cut -d/ -f1)"
+        path="$(echo $url | grep / | cut -d/ -f2-)"
+    fi
+    project="$(echo ${path%.*})"
+
+    # Bitbucket or GitHub
+    if [[ $host == "bitbucket.org" ]]; then
+        commit_url="https://bitbucket.org/$project/commits/"
+        break;
+    elif [[ $host == "github.com" ]]; then
+        commit_url="https://github.com/$project/commit/"
+        break;
+    else
+        commit_url=""
+    fi
+done
+
+# echo "The commiturl is $commiturl"
+
+# hold the ticket numbers that are touched
+declare -a referenced
+
+# regex patterns to recognize a story number
+taskid_pattern='#([0-9]*)'
+taskurl_pattern='https\:\/\/app\.asana\.com\/0\/[0-9]*\/([0-9]*)[\/.*]*'
+
+# get the checkin comment for parsing
+comment=$(git log --pretty=format:"%B" -n1 | tr '\n' ' ')
+
+branch_message=""
+if [ "$display_branch_name" == "true" ]; then
+    branch=$(git rev-parse --abbrev-ref --quiet HEAD)
+    branch_message=" in branch $branch"
+fi
+
+if [[ $commit_url == "" ]]; then
+    print_comment=$(git log -n1 --pretty=format:"<body>Committed %h$branch_message on $repository:%n<code>%B</code></body>")
+else
+    print_comment=$(git log -n1 --pretty=format:"<body>Committed$branch_message: $commit_url%H%n<code>%B</code></body>")
+fi
+
+# break the commit comment down into words
+IFS=' ' read -a words <<< "$comment"
+
+found_task_id=false
+for element in "${words[@]}"
+do
+    # if we have a task id, save it to the appropriate array
+    if [[ $element =~ $taskid_pattern ]]; then
+        referenced=("${referenced[@]}" "${BASH_REMATCH[1]}")
+        found_task_id=true
+    fi
+done
+
+# if task id not found in comment, then look for it in the branch name
+if [ "$found_task_id" = false ]; then
+    # get task id from branch name. Then send a comment request if task_id exists.
+	task_id=$(git branch | grep '*' | sed 's/^..//' | grep -o '#.*' | sed 's/^.//')
+	if [ "$task_id" ]; then
+       	curl \
+            -H "Authorization: Bearer ${access_token}" \
+            -X POST \
+            --data-urlencode "html_text=${print_comment}" \
+            "https://app.asana.com/api/1.0/tasks/${task_id}/stories" \
+            > /dev/null 2>&1
+	fi
+fi
+
+# if task id not found in comment, then see if the user posted the entire task url
+if [ "$found_task_id" = false ]; then
+    for element in "${words[@]}"
+    do
+        echo "trying url and das element is $element"
+        # if we have a task id, save it to the appropriate array
+        if [[ $element =~ $taskurl_pattern ]]; then
+            referenced=("${referenced[@]}" "${BASH_REMATCH[1]}")
+            found_task_id=true
+        # or else if we have a "closes" word, set the tracking bool accordingly
+        elif [[ $element =~ $closes_pattern ]]; then
+            closes='YES'
+        # and if we don't, set us back to referencing
+        # (if we're an "and", don't change any state)
+        elif [[ ! $element =~ $and_pattern ]]; then
+            closes='NO'
+        fi
+    done
+fi
+
+#echo "Found taskid $task_id"
+
+# touch the stories we've referenced
+for element in "${referenced[@]}"; do
+    http_code=$(curl \
+                    -sw '%{http_code}' \
+                    -H "Authorization: Bearer ${access_token}" \
+                    -X POST \
+                    --data-urlencode "html_text=${print_comment}" \
+                    "https://app.asana.com/api/1.0/tasks/${element}/stories" \
+                    -o /dev/null 2>&1)
+    if [ "$http_code" = "201" ]; then
+        echo "Successfully added comment for task $element"
+    else
+        echo "Error for task $element. HTTP return code:$http_code"
+    fi
+done
