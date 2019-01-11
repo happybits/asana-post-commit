@@ -4,7 +4,7 @@ if [ ! -d .git/hooks ]
 then
 	mkdir .git/hooks
 fi
-curl https://raw.githubusercontent.com/Spaceman-Labs/asana-post-commit/master/post-commit > .git/hooks/post-commit
+curl https://raw.githubusercontent.com/happybits/asana-post-commit/master/post-commit > .git/hooks/post-commit
 chmod 755 .git/hooks
 chmod ogu+rx .git/hooks/post-commit
 token=`git config --global --get user.asana-token`

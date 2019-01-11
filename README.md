@@ -6,7 +6,7 @@ A git post-commit script to link commits to Asana tickets.
 ### Magical setup:
 `% cd workspace`
 
-`% bash <(curl https://raw.githubusercontent.com/Spaceman-Labs/asana-post-commit/master/setup.sh)`
+`% bash <(curl https://raw.githubusercontent.com/happybits/asana-post-commit/master/setup.sh)`
 
 ### Manual setup:
 Copy the post-commit file to your repo's root `.git/hooks` directory. It's probably not a great idea to actually clone the repo into the internals of your repo. I don't know that it will break anything, but I don't guarantee it won't.
